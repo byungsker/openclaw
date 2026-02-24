@@ -20,6 +20,12 @@ export function stripTelegramInternalPrefixes(to: string): string {
       if (strippedTelegramPrefix && /^group:/i.test(trimmed)) {
         return trimmed.replace(/^group:/i, "").trim();
       }
+      // Slash-command session form: `slash:<userId>` (set as `To` in bot-native-commands).
+      // Appears as `currentChannelId` when the message tool infers a target inside a slash-command
+      // session (e.g. `telegram:slash:<userId>` → stripped to `slash:<userId>` → `<userId>`).
+      if (/^slash:/i.test(trimmed)) {
+        return trimmed.replace(/^slash:/i, "").trim();
+      }
       return trimmed;
     })();
     if (next === trimmed) {

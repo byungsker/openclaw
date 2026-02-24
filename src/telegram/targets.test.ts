@@ -23,6 +23,14 @@ describe("stripTelegramInternalPrefixes", () => {
   it("is idempotent", () => {
     expect(stripTelegramInternalPrefixes("@mychannel")).toBe("@mychannel");
   });
+
+  it("strips slash-command session prefix", () => {
+    expect(stripTelegramInternalPrefixes("slash:2053921472")).toBe("2053921472");
+  });
+
+  it("strips telegram+slash prefixes (session key form)", () => {
+    expect(stripTelegramInternalPrefixes("telegram:slash:2053921472")).toBe("2053921472");
+  });
 });
 
 describe("parseTelegramTarget", () => {
