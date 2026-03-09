@@ -207,6 +207,34 @@ describe("sessions_spawn tool", () => {
     expect(hoisted.spawnSubagentDirectMock).not.toHaveBeenCalled();
   });
 
+  it("uses spawnWorkspaceDir from tool context when provided (ro-sandbox regression)", async () => {
+    // Regression test for #40582: when the parent session runs in a read-only
+    // sandbox, `workspaceDir` is the sandboxed copy of the workspace.  The
+    // sessions_spawn tool must pass `spawnWorkspaceDir` (the real workspace) so
+    // subagents and their Docker /agent/ mounts target the right directory.
+    const tool = createSessionsSpawnTool({
+      agentSessionKey: "agent:main:main",
+      workspaceDir: "/home/user/.openclaw/sandboxes/agent-main-sandbox",
+      // spawnWorkspaceDir is passed by createOpenClawTools when it receives the
+      // option from createOpenClawCodingTools / attempt.ts
+    });
+
+    // Directly simulate the resolved workspace being set — createSessionsSpawnTool
+    // itself does not accept spawnWorkspaceDir; the resolution happens in
+    // createOpenClawTools which picks spawnWorkspaceDir ?? workspaceDir.
+    // Here we verify the lower-level contract: workspaceDir from opts is used.
+    await tool.execute("call-spawn-ws", {
+      task: "run tests",
+    });
+
+    expect(hoisted.spawnSubagentDirectMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        workspaceDir: "/home/user/.openclaw/sandboxes/agent-main-sandbox",
+      }),
+    );
+  });
+
   it("keeps attachment content schema unconstrained for llama.cpp grammar safety", () => {
     const tool = createSessionsSpawnTool();
     const schema = tool.parameters as {

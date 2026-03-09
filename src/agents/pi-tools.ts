@@ -209,6 +209,14 @@ export function createOpenClawCodingTools(options?: {
   runId?: string;
   agentDir?: string;
   workspaceDir?: string;
+  /**
+   * Real (pre-sandbox) workspace directory to pass to sessions_spawn for subagent
+   * inheritance.  When the parent runs in a read-only sandbox, workspaceDir is the
+   * sandboxed copy; this field lets the caller supply the original real path so
+   * spawned subagents (and their Docker /agent/ mounts) target the right directory.
+   * Defaults to workspaceDir when not provided.
+   */
+  spawnWorkspaceDir?: string;
   config?: OpenClawConfig;
   abortSignal?: AbortSignal;
   /**
@@ -488,6 +496,7 @@ export function createOpenClawCodingTools(options?: {
       sandboxFsBridge,
       fsPolicy,
       workspaceDir: workspaceRoot,
+      spawnWorkspaceDir: options?.spawnWorkspaceDir,
       sandboxed: !!sandbox,
       config: options?.config,
       pluginToolAllowlist: collectExplicitAllowlist([

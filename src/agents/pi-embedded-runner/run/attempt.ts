@@ -869,6 +869,12 @@ export async function runEmbeddedAttempt(
           runId: params.runId,
           agentDir,
           workspaceDir: effectiveWorkspace,
+          // When workspaceAccess is "ro", effectiveWorkspace is the sandboxed copy of
+          // the workspace.  File tools must use that copy for isolation, but spawned
+          // subagents should inherit the real workspace so their Docker /agent/ mount
+          // (and any workspace-relative paths) resolve correctly.  Pass the original
+          // resolved path explicitly; createOpenClawTools passes it to sessions_spawn.
+          spawnWorkspaceDir: resolvedWorkspace,
           config: params.config,
           abortSignal: runAbortController.signal,
           modelProvider: params.model.provider,
