@@ -69,9 +69,21 @@ export function createOpenClawTools(
     senderIsOwner?: boolean;
     /** Ephemeral session UUID — regenerated on /new and /reset. */
     sessionId?: string;
+    /**
+     * Real (pre-sandbox) workspace directory to inherit into spawned subagents.
+     * When the parent session runs in a read-only sandbox, `workspaceDir` points
+     * at the sandboxed copy rather than the real workspace.  File tools must use
+     * the sandbox copy for isolation, but sessions_spawn should pass the real
+     * workspace so subagents (and their Docker mounts) target the right directory.
+     * Defaults to `workspaceDir` when not provided.
+     */
+    spawnWorkspaceDir?: string;
   } & SpawnedToolContext,
 ): AnyAgentTool[] {
   const workspaceDir = resolveWorkspaceRoot(options?.workspaceDir);
+  const spawnWorkspaceDir = resolveWorkspaceRoot(
+    options?.spawnWorkspaceDir ?? options?.workspaceDir,
+  );
   const imageTool = options?.agentDir?.trim()
     ? createImageTool({
         config: options?.config,
@@ -178,7 +190,7 @@ export function createOpenClawTools(
       agentGroupSpace: options?.agentGroupSpace,
       sandboxed: options?.sandboxed,
       requesterAgentIdOverride: options?.requesterAgentIdOverride,
-      workspaceDir,
+      workspaceDir: spawnWorkspaceDir,
     }),
     createSubagentsTool({
       agentSessionKey: options?.agentSessionKey,
