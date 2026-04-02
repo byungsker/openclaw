@@ -4,6 +4,7 @@ import {
   isGatewayNonLoopbackBindMode,
   resolveGatewayPortWithDefault,
 } from "./gateway-control-ui-origins.js";
+import { migrateLegacyWebSearchConfig } from "./legacy-web-search.js";
 import { migrateLegacyXSearchConfig } from "./legacy-x-search.js";
 import {
   defineLegacyConfigMigration,
@@ -555,6 +556,27 @@ export const LEGACY_CONFIG_MIGRATIONS_RUNTIME: LegacyConfigMigrationSpec[] = [
         changes.push("Removed empty top-level heartbeat.");
       }
       delete raw.heartbeat;
+    },
+  }),
+  defineLegacyConfigMigration({
+    // v2026.3 moved per-provider config (e.g. tools.web.search.brave.mode) out of the core
+    // schema into plugin-owned config. The ToolsWebSearchSchema now uses .strict(), so any
+    // lingering provider sub-key causes a config validation failure on gateway startup.
+    // This migration strips/relocates those keys automatically so existing installs can start
+    // and then receive a clean config without manual openclaw.json edits.
+    id: "tools.web.search.<provider>->plugins.entries.<plugin>.config.webSearch",
+    describe:
+      "Move legacy tools.web.search.<provider> sub-keys into the matching plugin config entry",
+    apply: (raw, changes) => {
+      const result = migrateLegacyWebSearchConfig(raw);
+      if (!result.changes.length) {
+        return;
+      }
+      for (const key of Object.keys(raw)) {
+        delete raw[key];
+      }
+      Object.assign(raw, result.config);
+      changes.push(...result.changes);
     },
   }),
 ];

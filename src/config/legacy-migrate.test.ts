@@ -568,3 +568,40 @@ describe("legacy migrate controlUi.allowedOrigins seed (issue #29385)", () => {
     ]);
   });
 });
+
+describe("legacy migrate web search provider sub-keys", () => {
+  it("strips legacy tools.web.search.brave sub-key and moves it into plugin config", () => {
+    const res = migrateLegacyConfig({
+      tools: {
+        web: {
+          search: {
+            provider: "brave",
+            brave: {
+              mode: "llm-context",
+            },
+          },
+        },
+      },
+    });
+
+    expect(res.changes.length).toBeGreaterThan(0);
+    // The brave sub-key should be removed from tools.web.search
+    expect((res.config?.tools?.web?.search as Record<string, unknown> | undefined)?.brave).toBeUndefined();
+  });
+
+  it("is a no-op when tools.web.search has no legacy provider sub-keys", () => {
+    const res = migrateLegacyConfig({
+      tools: {
+        web: {
+          search: {
+            provider: "brave",
+            enabled: true,
+          },
+        },
+      },
+    });
+
+    expect(res.changes).toEqual([]);
+    expect(res.config).toBeNull();
+  });
+});
